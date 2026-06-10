@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     uses: OpenVoiceOS/gh-automations/.github/workflows/build-tests.yml@dev
+    permissions:
+      pull-requests: write
     with:
       python_versions: '["3.10", "3.11", "3.12", "3.13"]'
       test_path: 'tests'

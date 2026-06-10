@@ -8,9 +8,12 @@ on:
 jobs:
   coverage:
     uses: OpenVoiceOS/gh-automations/.github/workflows/coverage.yml@dev
+    permissions:
+      pull-requests: write
     with:
       python_version: '3.11'
       coverage_source: 'hivemind_a2a_agent_plugin'
       test_path: 'tests/'
       min_coverage: 0
+      install_extras: '.[test]'
       pre_install_pip: '"hivemind-plugin-manager>=0.5.0,<1.0.0" "pytest-httpx" "fastapi" "uvicorn" "anyio[trio]"'

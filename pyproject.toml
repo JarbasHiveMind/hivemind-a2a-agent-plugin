@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hivemind-a2a-agent-plugin"
+dynamic = ["version"]
+description = "A2A agent protocol plugin for HiveMind-core"
+license = { text = "Apache-2.0" }
+readme = "README.md"
+authors = [
+    { name = "JarbasAi", email = "jarbasai@mailfence.com" }
+]
+requires-python = ">=3.10"
+dependencies = [
+    "ovos-utils>=0.8.2,<1.0.0",
+    "hivemind-plugin-manager>=0.5.0,<1.0.0",
+    "httpx>=0.25.0",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "fastapi",
+    "uvicorn",
+    "httpx",
+]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "fastapi",
+    "uvicorn",
+    "httpx",
+]
+
+[project.urls]
+Homepage = "https://github.com/TigreGotico/hivemind-a2a-agent-plugin"
+Issues = "https://github.com/TigreGotico/hivemind-a2a-agent-plugin/issues"
+
+[project.entry-points."hivemind.agent.protocol"]
+"hivemind-a2a-agent-plugin" = "hivemind_a2a_agent_plugin:A2AAgentProtocol"
+
+[tool.setuptools.dynamic]
+version = { attr = "hivemind_a2a_agent_plugin.version.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["hivemind_a2a_agent_plugin*"]

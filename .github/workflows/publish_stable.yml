@@ -1,0 +1,22 @@
+name: Publish Stable Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  publish_stable:
+    if: github.event.pull_request.merged == true
+    uses: OpenVoiceOS/gh-automations/.github/workflows/publish-stable.yml@dev
+    secrets:
+      PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+      MATRIX_TOKEN: ${{ secrets.MATRIX_TOKEN }}
+    with:
+      version_file: 'hivemind_a2a_agent_plugin/version.py'
+      update_changelog: true
+      publish_pypi: true
+      notify_matrix: true

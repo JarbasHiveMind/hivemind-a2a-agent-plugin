@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0a3](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a3) (2026-06-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a2...0.1.0a3)
+
+**Merged pull requests:**
+
+- ci: wire missing gh-automations workflows [\#4](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/4) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.1.0a2](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a2) (2026-06-10)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a1...0.1.0a2)

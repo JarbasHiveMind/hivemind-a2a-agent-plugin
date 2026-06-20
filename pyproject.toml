@@ -22,16 +22,20 @@ dependencies = [
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-httpx",
     "fastapi",
     "uvicorn",
     "httpx",
+    "anyio[trio]",
 ]
 dev = [
     "pytest",
     "pytest-cov",
+    "pytest-httpx",
     "fastapi",
     "uvicorn",
     "httpx",
+    "anyio[trio]",
 ]
 
 [project.urls]

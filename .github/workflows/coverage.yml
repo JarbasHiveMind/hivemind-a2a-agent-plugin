@@ -13,4 +13,5 @@ jobs:
       coverage_source: 'hivemind_a2a_agent_plugin'
       test_path: 'tests/'
       min_coverage: 0
-      pre_install_pip: '"hivemind-plugin-manager>=0.5.0,<1.0.0" "pytest-httpx" "fastapi" "uvicorn" "anyio[trio]"'
+      # version policy is in pyproject (the `test` extra); no pre_install pins.
+      test_extras: 'test'

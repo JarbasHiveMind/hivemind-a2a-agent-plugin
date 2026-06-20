@@ -11,4 +11,5 @@ jobs:
     with:
       python_versions: '["3.10", "3.11", "3.12", "3.13"]'
       test_path: 'tests'
-      pre_install_pip: '"hivemind-plugin-manager>=0.5.0,<1.0.0" "pytest-httpx" "fastapi" "uvicorn" "anyio[trio]"'
+      # version policy is in pyproject (the `test` extra); no pre_install pins.
+      install_extras: 'test'

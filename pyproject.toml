@@ -27,6 +27,7 @@ test = [
     "uvicorn",
     "httpx",
     "anyio[trio]",
+    "hivescope>=0.5.2a1",
 ]
 dev = [
     "pytest",
@@ -36,6 +37,7 @@ dev = [
     "uvicorn",
     "httpx",
     "anyio[trio]",
+    "hivescope>=0.5.2a1",
 ]
 
 [project.urls]

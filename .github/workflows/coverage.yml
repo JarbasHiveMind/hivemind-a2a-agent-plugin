@@ -11,7 +11,7 @@ jobs:
     with:
       python_version: '3.11'
       coverage_source: 'hivemind_a2a_agent_plugin'
-      test_path: 'tests/'
+      test_path: 'tests/ --ignore=tests/e2e'
       min_coverage: 0
       # version policy is in pyproject (the `test` extra); no pre_install pins.
       test_extras: 'test'

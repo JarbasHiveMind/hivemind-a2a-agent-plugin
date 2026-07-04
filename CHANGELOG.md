@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0a5](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a5) (2026-07-04)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a4...0.1.0a5)
+
+**Merged pull requests:**
+
+- Configure Renovate [\#2](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/2) ([renovate[bot]](https://github.com/apps/renovate))
+
 ## [0.1.0a4](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a4) (2026-07-04)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a3...0.1.0a4)

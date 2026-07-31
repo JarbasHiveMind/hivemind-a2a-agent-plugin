@@ -1,27 +1,19 @@
 # hivemind-a2a-agent-plugin
 
-A [HiveMind](https://github.com/JarbasHiveMind/HiveMind-core) agent-protocol plugin
-that bridges the hive to external
-[A2A (Agent-to-Agent)](https://google.github.io/A2A/) agents.
+An agent-protocol plugin for [HiveMind](https://github.com/JarbasHiveMind/HiveMind-core) that connects the hive to external [A2A (Agent-to-Agent)](https://google.github.io/A2A/) agents.
 
-Natural-language queries arriving from hive satellites are forwarded to a configured
-A2A server via JSON-RPC 2.0 (`tasks/send` or `tasks/sendSubscribe`), and the
-response is streamed back to the originating satellite.
+The plugin forwards natural-language queries from hive satellites to a configured A2A server over JSON-RPC 2.0 (`tasks/send` or `tasks/sendSubscribe`). It streams the response back to the satellite that sent the query.
 
 ---
 
 ## What is A2A?
 
-[A2A](https://google.github.io/A2A/) is an open protocol for agent interoperability.
-An A2A server:
+[A2A](https://google.github.io/A2A/) is an open protocol for agent interoperability. An A2A server does two things:
 
-1. Publishes an **agent card** at `GET /.well-known/agent.json` describing its
-   capabilities, skills, and the URL that accepts tasks.
-2. Accepts **task** requests as JSON-RPC 2.0 at its root URL — either a blocking
-   `tasks/send` or a streaming `tasks/sendSubscribe` (SSE).
+1. It publishes an **agent card** at `GET /.well-known/agent.json`. The card describes the server's capabilities, skills, and the URL that accepts tasks.
+2. It accepts **task** requests as JSON-RPC 2.0 at its root URL. A request is either a blocking `tasks/send` call or a streaming `tasks/sendSubscribe` call (SSE).
 
-Any compliant A2A server (LangChain agents, Google ADK, CrewAI, custom FastAPI
-services, …) works as a backend for this plugin.
+Any compliant A2A server works as a backend for this plugin, including LangChain agents, Google ADK, CrewAI, and custom FastAPI services.
 
 ---
 
@@ -31,15 +23,13 @@ services, …) works as a backend for this plugin.
 pip install hivemind-a2a-agent-plugin
 ```
 
-The plugin registers itself under the `hivemind.agent.protocol` entry-point group
-so HiveMind-core discovers it automatically when it is installed.
+The plugin registers itself under the `hivemind.agent.protocol` entry-point group. HiveMind-core discovers it automatically once it is installed.
 
 ---
 
 ## Configuration
 
-Add the following to your OVOS / HiveMind config (typically
-`~/.config/hivemind/hivemind.conf`):
+Add the following to your OVOS / HiveMind config, typically at `~/.config/hivemind/hivemind.conf`:
 
 ```json
 {
@@ -57,8 +47,8 @@ Add the following to your OVOS / HiveMind config (typically
 
 | Key          | Default | Description                                          |
 |--------------|---------|------------------------------------------------------|
-| `agent_url`  | —       | **Required.** Root URL of the A2A server.            |
-| `auth_header`| —       | Optional `Authorization` header (e.g. `Bearer …`).  |
+| `agent_url`  | none    | **Required.** Root URL of the A2A server.            |
+| `auth_header`| none    | Optional `Authorization` header (e.g. `Bearer …`).  |
 | `timeout`    | `60`    | HTTP timeout in seconds.                             |
 | `streaming`  | `false` | Prefer `tasks/sendSubscribe` (SSE) when `true`.      |
 
@@ -80,7 +70,7 @@ Satellite (voice client, phone, …)
   → HiveMind master streams answer back to satellite
 ```
 
-**Start a minimal FastAPI A2A server and the HiveMind master:**
+**Run a minimal FastAPI A2A server and the HiveMind master:**
 
 ```bash
 # 1. run the example mock A2A server (also used by e2e tests)
@@ -93,19 +83,15 @@ hivemind-core listen
 
 ---
 
-## Session / context mapping
+## Session and context mapping
 
-The plugin maps the HiveMind `session_id` directly to the A2A `sessionId` parameter
-so multi-turn conversations are kept in context on the A2A server side.  No extra
-state is stored in the plugin; the A2A server owns conversation history.
+The plugin maps the HiveMind `session_id` directly to the A2A `sessionId` parameter, so multi-turn conversations keep their context on the A2A server side. The plugin stores no extra state. The A2A server owns the conversation history.
 
 ---
 
 ## Error handling
 
-The plugin never silences errors.  If the A2A server is unreachable, returns an
-empty response, or returns a JSON-RPC error object, a human-readable error string
-is yielded to the satellite so the user always receives a reply.
+The plugin never silences errors. The A2A server may be unreachable, return an empty response, or return a JSON-RPC error object. In each case, the plugin yields a human-readable error string to the satellite so the user always gets a reply.
 
 ---
 
@@ -119,8 +105,13 @@ pytest tests/          # unit tests (no server needed)
 pytest tests/e2e/      # e2e tests (spins up a FastAPI mock server in-process)
 ```
 
+## Related projects
+
+- [JarbasHiveMind/HiveMind-core](https://github.com/JarbasHiveMind/HiveMind-core): the HiveMind master this plugin connects to.
+
 ## Credits
 
 Funded by [NGI0 Commons Fund](https://nlnet.nl/project/OpenVoiceOS) / [NLnet](https://nlnet.nl)
 under grant agreement No [101135429](https://cordis.europa.eu/project/id/101135429),
 through the European Commission's [Next Generation Internet](https://ngi.eu) programme.
+</content>

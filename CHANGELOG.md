@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0a6](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a6) (2026-07-31)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a5...0.1.0a6)
+
+**Merged pull requests:**
+
+- docs: rewrite README in Simplified Technical English [\#7](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/7) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.1.0a5](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a5) (2026-07-04)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a4...0.1.0a5)

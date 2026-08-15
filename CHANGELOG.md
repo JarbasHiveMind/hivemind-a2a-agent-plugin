@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0a7](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a7) (2026-08-15)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a6...0.1.0a7)
+
+**Merged pull requests:**
+
+- docs: add AGENTS.md with per-repo agent conventions [\#8](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/8) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.1.0a6](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a6) (2026-07-31)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a5...0.1.0a6)

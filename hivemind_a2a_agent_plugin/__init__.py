@@ -58,6 +58,15 @@ class A2AAgentProtocol(AgentProtocol):
     _client: Optional[A2AClient] = dataclasses.field(
         default=None, init=False, repr=False, compare=False
     )
+    _agent_url: Optional[str] = dataclasses.field(
+        default=None, init=False, repr=False, compare=False
+    )
+    _agent_card: Optional[Any] = dataclasses.field(
+        default=None, init=False, repr=False, compare=False
+    )
+    _agent_card_fetched: bool = dataclasses.field(
+        default=False, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
         # Merge OVOS global config if available, but explicit kwargs win.
@@ -80,13 +89,14 @@ class A2AAgentProtocol(AgentProtocol):
             auth = merged.get(_CFG_AUTH)
             timeout = float(merged.get(_CFG_TIMEOUT, _DEFAULT_TIMEOUT))
             streaming = bool(merged.get(_CFG_STREAMING, False))
+            self._agent_url = url
             self._client = A2AClient(
                 base_url=url,
                 auth_header=auth,
                 timeout=timeout,
                 streaming=streaming,
             )
-            LOG.info(f"A2AAgentProtocol: connected to A2A agent at {url}")
+            LOG.info(f"A2AAgentProtocol: configured for A2A agent at {url}")
 
     # ------------------------------------------------------------------
     # AgentProtocol implementation
@@ -123,6 +133,25 @@ class A2AAgentProtocol(AgentProtocol):
             f"A2AAgentProtocol: query lang={lang!r} session={session_id!r} "
             f"utterance={utterance!r}"
         )
+
+        if not self._agent_card_fetched:
+            self._agent_card_fetched = True
+            try:
+                card = self._client.fetch_agent_card()
+                if not card or not getattr(card, "name", None):
+                    raise ValueError("agent card is missing or invalid")
+                self._agent_card = card
+            except Exception as exc:
+                LOG.error(
+                    f"A2AAgentProtocol: failed to validate agent card at "
+                    f"{self._agent_url}: {exc}", exc_info=True
+                )
+                yield (
+                    f"Error validating A2A agent at {self._agent_url}: "
+                    f"could not fetch or parse its agent card ({exc})"
+                )
+                yield None
+                return
 
         try:
             if self._client.streaming:

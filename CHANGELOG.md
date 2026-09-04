@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.1a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.1a1) (2026-09-04)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a7...0.1.1a1)
+
+**Merged pull requests:**
+
+- fix: validate the A2A agent card on first use and stop mislabelling config as a live connection [\#9](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/9) ([JarbasAl](https://github.com/JarbasAl))
+
 ## [0.1.0a7](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.0a7) (2026-08-15)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a6...0.1.0a7)

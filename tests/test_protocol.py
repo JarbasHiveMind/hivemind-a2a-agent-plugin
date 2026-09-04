@@ -99,6 +99,48 @@ class TestNaturalLanguageQueryBlocking:
         assert any("error" in c.lower() for c in chunks if c is not None)
 
 
+class TestAgentCardValidation:
+    def test_bad_card_yields_clean_error_and_skips_dispatch(self):
+        proto = _protocol()
+        proto._client.streaming = False
+        proto._client.fetch_agent_card.side_effect = RuntimeError("connection refused")
+
+        chunks = list(proto.natural_language_query("hello", "en-us"))
+
+        assert chunks[-1] is None
+        assert len(chunks) == 2
+        assert "a2a.test" in chunks[0]
+        assert "connection refused" in chunks[0].lower()
+        proto._client.send_task.assert_not_called()
+        proto._client.stream_task.assert_not_called()
+
+    def test_invalid_card_yields_clean_error_and_skips_dispatch(self):
+        proto = _protocol()
+        proto._client.streaming = False
+        proto._client.fetch_agent_card.return_value = None
+
+        chunks = list(proto.natural_language_query("hello", "en-us"))
+
+        assert chunks[-1] is None
+        assert len(chunks) == 2
+        assert "invalid" in chunks[0].lower() or "missing" in chunks[0].lower()
+        proto._client.send_task.assert_not_called()
+
+    def test_valid_card_fetched_once_then_dispatches(self):
+        proto = _protocol()
+        proto._client.streaming = False
+        card = MagicMock()
+        card.name = "demo-agent"
+        proto._client.fetch_agent_card.return_value = card
+        proto._client.send_task.return_value = "ok"
+
+        list(proto.natural_language_query("first", "en-us"))
+        list(proto.natural_language_query("second", "en-us"))
+
+        proto._client.fetch_agent_card.assert_called_once()
+        assert proto._client.send_task.call_count == 2
+
+
 class TestNaturalLanguageQueryStreaming:
     def _stream_proto(self, chunks_to_yield: List[str]) -> A2AAgentProtocol:
         proto = _protocol(streaming=True)

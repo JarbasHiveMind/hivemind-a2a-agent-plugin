@@ -73,8 +73,8 @@ Satellite (voice client, phone, …)
 **Run a minimal FastAPI A2A server and the HiveMind master:**
 
 ```bash
-# 1. run the example mock A2A server (also used by e2e tests)
-uvicorn tests.e2e.mock_a2a_server:app --port 9999
+# 1. run the example mock A2A server (also used by e2e tests), from tests/
+cd tests && uvicorn e2e.mock_a2a_server:app --port 9999
 
 # 2. configure hivemind-core to use this plugin (see above)
 # 3. start hivemind-core

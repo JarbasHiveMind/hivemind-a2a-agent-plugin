@@ -29,7 +29,7 @@ from hivemind_bus_client.message import HiveMessage, HiveMessageType  # noqa: E4
 from ovos_bus_client.message import Message  # noqa: E402
 from hivescope.topology import TopologyBuilder  # noqa: E402
 
-from tests.e2e.mock_a2a_server import app as mock_app  # noqa: E402
+from .mock_a2a_server import app as mock_app  # noqa: E402
 from hivemind_a2a_agent_plugin import A2AAgentProtocol  # noqa: E402
 
 

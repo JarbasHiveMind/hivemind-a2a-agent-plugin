@@ -98,7 +98,7 @@ The plugin never silences errors. The A2A server may be unreachable, return an e
 ## Development
 
 ```bash
-git clone https://github.com/TigreGotico/hivemind-a2a-agent-plugin
+git clone https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin
 cd hivemind-a2a-agent-plugin
 pip install -e ".[dev]"
 pytest tests/          # unit tests (no server needed)

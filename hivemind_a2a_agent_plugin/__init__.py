@@ -1,9 +1,9 @@
 """HiveMind A2A agent protocol plugin.
 
 Bridges HiveMind natural-language queries to external A2A (Agent-to-Agent)
-agents.  Any utterance arriving from hive satellites is forwarded to a
-configured A2A server via JSON-RPC 2.0 (``tasks/send`` / ``tasks/sendSubscribe``),
-and the response is streamed back through the HiveMind session.
+agents.  Any utterance arriving from hive satellites is sent to a configured
+A2A agent with ``SendMessage`` (or ``SendStreamingMessage``), and the answer
+is streamed back through the HiveMind session.
 
 The plugin is registered under the ``hivemind.agent.protocol`` entry-point
 group so hivemind-core discovers it automatically.
@@ -47,9 +47,9 @@ class A2AAgentProtocol(AgentProtocol):
            streaming: false               # prefer SSE when true, optional
 
     The plugin is stateless with respect to the HiveMind client transport —
-    it only owns the outbound HTTP connection to the A2A server and maps
-    HiveMind session IDs to A2A ``sessionId`` values so conversation context
-    is preserved across multi-turn exchanges.
+    it only owns the outbound HTTP connection to the A2A agent. hivemind-core
+    calls :meth:`natural_language_query` with no session id, so each query is
+    sent without a ``contextId`` and the agent starts a new conversation.
     """
 
     config: Dict[str, Any] = dataclasses.field(default_factory=dict)
@@ -115,8 +115,11 @@ class A2AAgentProtocol(AgentProtocol):
             lang:      BCP-47 language tag (e.g. ``"en-us"``).  Forwarded
                        as context metadata so A2A agents can apply
                        language-specific processing.
-            session_id: HiveMind session identifier; mapped 1-to-1 to the
-                        A2A ``sessionId`` so multi-turn context is preserved.
+            session_id: Optional local conversation id. hivemind-core passes
+                        none, so an answer to a question from the agent
+                        starts a new task. A caller that passes one keeps the
+                        agent-assigned ``contextId`` and continues a task that
+                        waits for input.
 
         Yields:
             Non-empty text chunks from the agent response, terminated by

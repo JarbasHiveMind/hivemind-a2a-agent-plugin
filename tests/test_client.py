@@ -1,241 +1,311 @@
-"""Unit tests for the A2A client — mock HTTP, no real server."""
-from __future__ import annotations
-
-import json
+"""The vendored A2AClient against a real a2a-sdk agent (see a2a_agent.py)."""
+import gc
+import re
+import threading
+import time
 
 import httpx
 import pytest
+from a2a.client.errors import A2AClientError, A2AClientTimeoutError, AgentCardResolutionError
+from a2a.utils.errors import A2AError, InvalidParamsError, TaskNotFoundError, UnsupportedOperationError
 
+from hivemind_a2a_agent_plugin import _client as client_module
 from hivemind_a2a_agent_plugin._client import A2AClient, AgentCard, AgentSkill
 
-
-# ---------------------------------------------------------------------------
-# Helpers — build minimal JSON-RPC response bodies
-# ---------------------------------------------------------------------------
-
-def _send_response(text: str, rpc_id: str = "test-id") -> dict:
-    return {
-        "jsonrpc": "2.0",
-        "id": rpc_id,
-        "result": {
-            "artifacts": [
-                {"parts": [{"type": "text", "text": text}]}
-            ]
-        },
-    }
+ECHO = re.compile(r"echo\[(?P<context>[^\]]+)\]: (?P<text>.*)", re.DOTALL)
 
 
-def _error_response(code: int, message: str, rpc_id: str = "test-id") -> dict:
-    return {
-        "jsonrpc": "2.0",
-        "id": rpc_id,
-        "error": {"code": code, "message": message},
-    }
+def echo(answer: str) -> tuple[str, str]:
+    """Split the test agent's ``echo[<contextId>]: <text>`` answer."""
+    match = ECHO.fullmatch(answer)
+    assert match, answer
+    return match["context"], match["text"]
 
 
-AGENT_CARD_DICT = {
-    "name": "TestAgent",
-    "description": "A test agent",
-    "url": "http://localhost:9999",
-    "version": "1.0",
-    "capabilities": {"streaming": True},
-    "skills": [
-        {
-            "id": "qa",
-            "name": "Q&A",
-            "description": "Answers questions",
-            "tags": ["qa"],
-            "examples": ["What is 2+2?"],
-        }
-    ],
-}
+@pytest.fixture
+def client(a2a_agent_url):
+    with A2AClient(a2a_agent_url, timeout=10) as c:
+        yield c
 
 
-# ---------------------------------------------------------------------------
-# AgentCard / AgentSkill parsing
-# ---------------------------------------------------------------------------
-
-class TestAgentCard:
-    def test_from_dict_basic(self):
-        card = AgentCard.from_dict(AGENT_CARD_DICT)
-        assert card.name == "TestAgent"
-        assert card.streaming is True
-        assert len(card.skills) == 1
-        assert card.skills[0].id == "qa"
-
-    def test_from_dict_no_capabilities(self):
-        d = {**AGENT_CARD_DICT, "capabilities": {}}
-        card = AgentCard.from_dict(d)
-        assert card.streaming is False
-
-    def test_from_dict_no_skills(self):
-        d = {**AGENT_CARD_DICT, "skills": []}
-        card = AgentCard.from_dict(d)
-        assert card.skills == []
-
-    def test_skill_from_dict(self):
-        skill = AgentSkill.from_dict(AGENT_CARD_DICT["skills"][0])
-        assert skill.id == "qa"
-        assert "qa" in skill.tags
-        assert skill.examples == ["What is 2+2?"]
+def test_fetch_agent_card_reads_the_well_known_card(client, a2a_agent_url):
+    card = client.fetch_agent_card()
+    assert isinstance(card, AgentCard)
+    assert card.name == "test-agent"
+    assert card.url == a2a_agent_url
+    assert card.streaming is True
+    assert [s.id for s in card.skills] == ["echo"]
 
 
-# ---------------------------------------------------------------------------
-# A2AClient.fetch_agent_card
-# ---------------------------------------------------------------------------
-
-class TestFetchAgentCard:
-    def test_fetch_success(self, httpx_mock):
-        httpx_mock.add_response(
-            method="GET",
-            url="http://localhost:9999/.well-known/agent.json",
-            json=AGENT_CARD_DICT,
-        )
-        client = A2AClient("http://localhost:9999")
-        card = client.fetch_agent_card()
-        assert card.name == "TestAgent"
-        assert card.streaming is True
-
-    def test_fetch_http_error(self, httpx_mock):
-        httpx_mock.add_response(
-            method="GET",
-            url="http://localhost:9999/.well-known/agent.json",
-            status_code=404,
-        )
-        client = A2AClient("http://localhost:9999")
-        with pytest.raises(httpx.HTTPStatusError):
-            client.fetch_agent_card()
+def test_send_task_returns_the_agent_answer(client):
+    assert echo(client.send_task("hello", session_id="s-1"))[1] == "hello"
 
 
-# ---------------------------------------------------------------------------
-# A2AClient.send_task
-# ---------------------------------------------------------------------------
-
-class TestSendTask:
-    def test_send_basic(self, httpx_mock):
-        httpx_mock.add_response(
-            method="POST",
-            url="http://localhost:9999",
-            json=_send_response("Paris is the capital of France."),
-        )
-        client = A2AClient("http://localhost:9999")
-        result = client.send_task("What is the capital of France?", lang="en-us")
-        assert result == "Paris is the capital of France."
-
-    def test_send_with_session(self, httpx_mock):
-        def _capture(request: httpx.Request):
-            body = json.loads(request.content)
-            assert body["params"]["sessionId"] == "sess-123"
-            return httpx.Response(200, json=_send_response("ok"))
-
-        httpx_mock.add_callback(_capture, method="POST", url="http://localhost:9999")
-        client = A2AClient("http://localhost:9999")
-        result = client.send_task("hello", session_id="sess-123")
-        assert result == "ok"
-
-    def test_send_rpc_error(self, httpx_mock):
-        httpx_mock.add_response(
-            method="POST",
-            url="http://localhost:9999",
-            json=_error_response(-32603, "internal error"),
-        )
-        client = A2AClient("http://localhost:9999")
-        with pytest.raises(RuntimeError, match="A2A RPC error"):
-            client.send_task("hello")
-
-    def test_send_empty_response(self, httpx_mock):
-        httpx_mock.add_response(
-            method="POST",
-            url="http://localhost:9999",
-            json={"jsonrpc": "2.0", "id": "x", "result": {}},
-        )
-        client = A2AClient("http://localhost:9999")
-        result = client.send_task("hello")
-        assert result == ""
-
-    def test_send_message_fallback(self, httpx_mock):
-        """result.message fallback path."""
-        httpx_mock.add_response(
-            method="POST",
-            url="http://localhost:9999",
-            json={
-                "jsonrpc": "2.0",
-                "id": "x",
-                "result": {
-                    "message": {"parts": [{"type": "text", "text": "fallback answer"}]}
-                },
-            },
-        )
-        client = A2AClient("http://localhost:9999")
-        result = client.send_task("hello")
-        assert result == "fallback answer"
-
-    def test_send_auth_header_forwarded(self, httpx_mock):
-        def _capture(request: httpx.Request):
-            assert request.headers["authorization"] == "Bearer secret"
-            return httpx.Response(200, json=_send_response("authed"))
-
-        httpx_mock.add_callback(_capture, method="POST", url="http://localhost:9999")
-        client = A2AClient("http://localhost:9999", auth_header="Bearer secret")
-        result = client.send_task("hello")
-        assert result == "authed"
+def test_the_agent_assigns_the_context_and_not_the_session_id(client):
+    context, _ = echo(client.send_task("hello", session_id="kitchen"))
+    assert context != "kitchen"
 
 
-# ---------------------------------------------------------------------------
-# A2AClient.stream_task (SSE)
-# ---------------------------------------------------------------------------
-
-def _sse_body(*chunks: str, done: bool = True) -> bytes:
-    lines = []
-    for chunk in chunks:
-        event = {
-            "result": {
-                "delta": {"parts": [{"type": "text", "text": chunk}]}
-            }
-        }
-        lines.append(f"data: {json.dumps(event)}\n\n")
-    if done:
-        lines.append("data: [DONE]\n\n")
-    return "".join(lines).encode()
+def test_one_session_keeps_its_context_across_turns(client):
+    first, _ = echo(client.send_task("one", session_id="conv-7"))
+    second, _ = echo(client.send_task("two", session_id="conv-7"))
+    streamed, _ = echo("".join(client.stream_task("three", session_id="conv-7")))
+    assert first == second == streamed
 
 
-class TestStreamTask:
-    def test_stream_basic(self, httpx_mock):
-        httpx_mock.add_response(
-            method="POST",
-            url="http://localhost:9999",
-            content=_sse_body("Hello", " world"),
-            headers={"Content-Type": "text/event-stream"},
-        )
-        client = A2AClient("http://localhost:9999", streaming=True)
-        chunks = list(client.stream_task("hi"))
-        assert chunks == ["Hello", " world"]
+def test_two_sessions_get_two_contexts(client):
+    device_1, _ = echo(client.send_task("hello", session_id="default"))
+    device_2, _ = echo(A2AClient(client.base_url, timeout=10).send_task("hello", session_id="default"))
+    other, _ = echo(client.send_task("hello", session_id="living-room"))
+    assert len({device_1, device_2, other}) == 3
 
-    def test_stream_skips_empty_lines(self, httpx_mock):
-        body = b"data: \n\ndata: [DONE]\n\n"
-        httpx_mock.add_response(
-            method="POST",
-            url="http://localhost:9999",
-            content=body,
-            headers={"Content-Type": "text/event-stream"},
-        )
-        client = A2AClient("http://localhost:9999", streaming=True)
-        chunks = list(client.stream_task("hi"))
-        assert chunks == []
 
-    def test_stream_artifact_key(self, httpx_mock):
-        event = {
-            "result": {
-                "artifact": {"parts": [{"type": "text", "text": "artifact chunk"}]}
-            }
-        }
-        body = f"data: {json.dumps(event)}\n\ndata: [DONE]\n\n".encode()
-        httpx_mock.add_response(
-            method="POST",
-            url="http://localhost:9999",
-            content=body,
-            headers={"Content-Type": "text/event-stream"},
-        )
-        client = A2AClient("http://localhost:9999", streaming=True)
-        chunks = list(client.stream_task("hi"))
-        assert chunks == ["artifact chunk"]
+def test_no_session_starts_a_new_context_each_time(client):
+    assert echo(client.send_task("a"))[0] != echo(client.send_task("b"))[0]
+
+
+def test_the_context_map_keeps_the_most_recent_sessions(client, monkeypatch):
+    monkeypatch.setattr(client_module, "MAX_SESSIONS", 2)
+    contexts = {s: echo(client.send_task("x", session_id=s))[0] for s in ("a", "b")}
+    assert echo(client.send_task("x", session_id="a"))[0] == contexts["a"]
+    client.send_task("x", session_id="c")
+    assert list(client._sessions) == ["a", "c"]
+    assert echo(client.send_task("x", session_id="b"))[0] != contexts["b"]
+
+
+def continued(reply: str, text: str) -> bool:
+    """True when the test agent continued the task waiting for input, not a new one."""
+    return re.fullmatch(rf"continued\[[^\]]+\]: {text}", reply) is not None
+
+
+def test_the_answer_to_a_question_continues_the_same_task(client):
+    first_context, _ = echo(client.send_task("hello", session_id="trip"))
+    assert client.send_task("ask", session_id="trip") == "which city?"
+    assert continued(client.send_task("lisbon", session_id="trip"), "lisbon")
+    context, text = echo(client.send_task("thanks", session_id="trip"))
+    assert (context, text) == (first_context, "thanks")
+
+
+def test_the_streaming_answer_to_a_question_continues_the_same_task(client):
+    assert "".join(client.stream_task("ask", session_id="trip-s")) == "which city?"
+    assert continued("".join(client.stream_task("porto", session_id="trip-s")), "porto")
+
+
+def test_the_answer_to_an_auth_request_continues_the_same_task(client):
+    assert client.send_task("authreq", session_id="bank") == "login please"
+    assert continued(client.send_task("token-9", session_id="bank"), "token-9")
+
+
+def test_a_task_the_agent_purged_keeps_the_conversation(start_a2a_agent):
+    agent, url = start_a2a_agent()
+    with A2AClient(url, timeout=10) as c:
+        context, _ = echo(c.send_task("hello", session_id="trip"))
+        assert c.send_task("ask", session_id="trip") == "which city?"
+        agent.kill()
+        agent.wait(timeout=10)
+        start_a2a_agent(port=int(url.rsplit(":", 1)[1]))
+        with pytest.raises(TaskNotFoundError):
+            c.send_task("lisbon", session_id="trip")
+        assert echo(c.send_task("hello", session_id="trip")) == (context, "hello")
+
+
+def test_a_task_finished_out_of_band_keeps_the_conversation(client):
+    assert client.send_task("remember gold", session_id="vault") == "stored"
+    assert client.send_task("authoob 1", session_id="vault") == "open the link to log in"
+    time.sleep(2)
+    with pytest.raises(UnsupportedOperationError):
+        client.send_task("token-9", session_id="vault")
+    assert client.send_task("recall", session_id="vault") == "gold"
+
+
+@pytest.mark.parametrize("command, error", [
+    ("forget", InvalidParamsError),
+    ("expire", TaskNotFoundError),
+    ("expire-terminal", UnsupportedOperationError),
+])
+@pytest.mark.parametrize("streaming", [False, True])
+def test_a_rejected_context_starts_a_new_conversation(client, command, error, streaming):
+    session = f"studio-{command}-{streaming}"
+
+    def send(text):
+        return "".join(client.stream_task(text, session_id=session)) if streaming \
+            else client.send_task(text, session_id=session)
+
+    assert send("remember blue") == "stored"
+    context, _ = echo(send("hello"))
+    assert send(command) == "forgotten"
+    with pytest.raises(error):
+        send("recall")
+    assert send("recall") == "nothing"
+    assert echo(send("hello"))[0] != context
+
+
+def test_a_timeout_keeps_the_open_task(a2a_agent_url):
+    with A2AClient(a2a_agent_url, timeout=1) as c:
+        assert c.send_task("ask", session_id="patient") == "which city?"
+        with pytest.raises(A2AClientTimeoutError):
+            c.send_task("stall", session_id="patient")
+        assert continued(c.send_task("lisbon", session_id="patient"), "lisbon")
+
+
+def test_a_timeout_keeps_the_session(a2a_agent_url):
+    with A2AClient(a2a_agent_url, timeout=1) as c:
+        context, _ = echo(c.send_task("hello", session_id="flaky"))
+        with pytest.raises(A2AClientTimeoutError):
+            c.send_task("slow 3 x", session_id="flaky")
+        assert echo(c.send_task("again", session_id="flaky"))[0] == context
+
+
+def test_send_task_joins_appended_artifact_chunks(client):
+    assert client.send_task("chunks alpha beta gamma") == "alpha beta gamma "
+
+
+def test_stream_task_yields_each_artifact_chunk_once(client):
+    assert list(client.stream_task("chunks alpha beta gamma")) == ["alpha ", "beta ", "gamma "]
+
+
+def test_stream_task_does_not_repeat_the_final_task_snapshot(client):
+    assert list(client.stream_task("snapshot a b")) == ["a ", "b "]
+
+
+def test_send_task_reads_the_final_task_snapshot(client):
+    assert client.send_task("snapshot a b") == "a b "
+
+
+def test_stream_task_yields_an_agent_message(client):
+    assert echo("".join(client.stream_task("hi", session_id="s-2")))[1] == "hi"
+
+
+@pytest.mark.parametrize("text, answer", [
+    ("ask", "which city?"),
+    ("authreq", "login please"),
+    ("done", "final words"),
+])
+def test_send_task_answers_with_the_task_status_message(client, text, answer):
+    assert client.send_task(text) == answer
+
+
+@pytest.mark.parametrize("text, answer", [("ask", "which city?"), ("done", "final words")])
+def test_stream_task_answers_with_the_task_status_message(client, text, answer):
+    assert "".join(client.stream_task(text)) == answer
+
+
+def test_failed_task_raises_with_the_agent_reason(client):
+    with pytest.raises(RuntimeError, match="TASK_STATE_FAILED: backend exploded"):
+        client.send_task("fail")
+
+
+def test_failed_streaming_task_raises(client):
+    with pytest.raises(RuntimeError, match="TASK_STATE_FAILED: backend exploded"):
+        list(client.stream_task("fail"))
+
+
+def test_unicode_round_trip(client):
+    text = "olá 👋 日本語"
+    assert echo(client.send_task(text, session_id="u"))[1] == text
+
+
+def test_auth_header_reaches_the_agent(a2a_agent_url):
+    with A2AClient(a2a_agent_url, auth_header="Bearer s3cret", timeout=10) as c:
+        c.send_task("hello")
+    assert httpx.get(a2a_agent_url + "/last-auth").text == "Bearer s3cret"
+
+
+def test_auth_header_reaches_the_agent_on_the_streaming_path(a2a_agent_url):
+    with A2AClient(a2a_agent_url, auth_header="Bearer str3am", timeout=10) as c:
+        assert echo("".join(c.stream_task("hello")))[1] == "hello"
+    assert httpx.get(a2a_agent_url + "/last-auth").text == "Bearer str3am"
+
+
+@pytest.mark.parametrize("status", [401, 429, 500])
+@pytest.mark.parametrize("streaming", [False, True])
+def test_http_error_status_raises_a_client_error(a2a_agent_url, status, streaming):
+    with A2AClient(a2a_agent_url, auth_header=f"Bearer status-{status}", timeout=10) as c:
+        with pytest.raises(A2AClientError, match=str(status)):
+            list(c.stream_task("hello")) if streaming else c.send_task("hello")
+
+
+def test_slow_agent_raises_a_timeout(a2a_agent_url):
+    with A2AClient(a2a_agent_url, timeout=1) as c:
+        start = time.monotonic()
+        with pytest.raises(A2AClientTimeoutError):
+            c.send_task("slow 5 x")
+        assert time.monotonic() - start < 4
+
+
+def test_unreachable_agent_raises_a_card_error():
+    with A2AClient("http://127.0.0.1:1", timeout=3) as c:
+        with pytest.raises(AgentCardResolutionError):
+            c.send_task("hello")
+
+
+def test_agent_killed_mid_call_raises(a2a_agent_process):
+    proc, url = a2a_agent_process
+    with A2AClient(url, timeout=10) as c:
+        c.fetch_agent_card()
+        start = time.monotonic()
+        killer = threading.Timer(1.0, proc.kill)
+        killer.start()
+        with pytest.raises(A2AClientError):
+            c.send_task("slow 5 x")
+        killer.join()
+        assert time.monotonic() - start < 5
+
+
+def test_an_agent_upgraded_in_place_is_reached_after_one_error(start_a2a_agent):
+    old, url = start_a2a_agent("--a2a-0.3")
+    with A2AClient(url, timeout=10) as c:
+        assert echo(c.send_task("hello"))[1] == "hello"
+        old.kill()
+        old.wait(timeout=10)
+        start_a2a_agent(port=int(url.rsplit(":", 1)[1]))
+        with pytest.raises(A2AError):
+            c.send_task("hello")
+        assert echo(c.send_task("hello"))[1] == "hello"
+
+
+def loop_threads() -> int:
+    return sum(t.name == "a2a-client-loop" for t in threading.enumerate())
+
+
+def test_a_dropped_client_stops_its_thread(a2a_agent_url):
+    gc.collect()
+    before = loop_threads()
+    for _ in range(5):
+        A2AClient(a2a_agent_url, timeout=10).send_task("hello")
+    gc.collect()
+    deadline = time.monotonic() + 5
+    while loop_threads() > before and time.monotonic() < deadline:
+        time.sleep(0.1)
+    assert loop_threads() == before
+
+
+def test_close_is_idempotent(a2a_agent_url):
+    c = A2AClient(a2a_agent_url)
+    c.send_task("hello")
+    c.close()
+    c.close()
+
+
+def test_lang_travels_as_message_metadata(client):
+    assert echo(client.send_task("lang", session_id="l", lang="pt-PT"))[1] == "lang=pt-PT"
+
+
+def test_lang_travels_on_the_streaming_path(client):
+    assert echo("".join(client.stream_task("lang", session_id="l", lang="de-DE")))[1] == "lang=de-DE"
+
+
+def test_1_0_card_takes_the_url_of_the_first_interface():
+    card = AgentCard.from_dict({
+        "name": "A", "description": "d", "version": "2.1",
+        "supportedInterfaces": [{"url": "https://a.example/a2a", "protocolBinding": "JSONRPC"}],
+        "capabilities": {"streaming": True},
+        "skills": [{"id": "s", "name": "S", "tags": ["t"]}],
+    })
+    assert (card.url, card.version, card.streaming) == ("https://a.example/a2a", "2.1", True)
+    assert card.skills == [AgentSkill(id="s", name="S", tags=["t"])]
+
+
+def test_0_3_card_takes_the_top_level_url():
+    card = AgentCard.from_dict({"name": "B", "url": "https://b.example/", "protocolVersion": "0.3"})
+    assert (card.url, card.streaming, card.skills) == ("https://b.example/", False, [])

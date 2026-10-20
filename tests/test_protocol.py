@@ -174,3 +174,24 @@ class TestNaturalLanguageQueryStreaming:
         chunks = list(proto.natural_language_query("q", "en-us"))
         assert chunks[-1] is None
         assert chunks[:-1] == ["a", "b", "c"]
+
+
+class TestBusUtterance:
+    def test_warns_once_per_instance(self):
+        from ovos_bus_client.message import Message
+        proto = _protocol()
+        with patch("hivemind_a2a_agent_plugin.LOG") as log:
+            proto.bus.emit(Message("recognizer_loop:utterance",
+                                   {"utterances": ["hello"], "lang": "en-US"}))
+            proto.bus.emit(Message("recognizer_loop:utterance",
+                                   {"utterances": ["again"], "lang": "en-US"}))
+        assert log.warning.call_count == 1
+        text = log.warning.call_args.args[0]
+        assert "QUERY" in text and "no reply" in text
+
+    def test_other_bus_messages_do_not_warn(self):
+        from ovos_bus_client.message import Message
+        proto = _protocol()
+        with patch("hivemind_a2a_agent_plugin.LOG") as log:
+            proto.bus.emit(Message("speak", {"utterance": "hi"}))
+        assert log.warning.call_count == 0

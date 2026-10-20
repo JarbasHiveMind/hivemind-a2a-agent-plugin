@@ -3,58 +3,24 @@
 Full in-process HiveMind topology (hivescope ``TopologyBuilder``: real
 ``hivemind-core`` listener protocol, handshake, ACL, QUERY routing — no real
 hive sockets) with ``A2AAgentProtocol`` as the master's agent, pointed at the
-live mock A2A FastAPI server over a real localhost HTTP socket.
+real a2a-sdk agent (tests/a2a_agent.py) over a real localhost HTTP socket.
 
 The proven round-trip:
 
     satellite ``QUERY`` (recognizer_loop:utterance)
       -> hivemind-core admits it and calls
          ``A2AAgentProtocol.natural_language_query``
-      -> real JSON-RPC ``tasks/send`` HTTP call to the mock A2A server
+      -> real A2A ``SendMessage`` call to the a2a-sdk agent
       -> the echoed answer streams back as QUERY response chunks
       -> the originating satellite receives the answer
 """
 from __future__ import annotations
 
-import socket
-import threading
-import time
-
-import pytest
-import uvicorn
-
-pytest.importorskip("hivescope")
-
 from hivemind_bus_client.message import HiveMessage, HiveMessageType  # noqa: E402
 from ovos_bus_client.message import Message  # noqa: E402
 from hivescope.topology import TopologyBuilder  # noqa: E402
 
-from .mock_a2a_server import app as mock_app  # noqa: E402
 from hivemind_a2a_agent_plugin import A2AAgentProtocol  # noqa: E402
-
-
-def _free_port() -> int:
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
-@pytest.fixture(scope="module")
-def a2a_server_url():
-    port = _free_port()
-    config = uvicorn.Config(mock_app, host="127.0.0.1", port=port,
-                            log_level="error")
-    server = uvicorn.Server(config)
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
-    deadline = time.time() + 10
-    while not server.started:
-        if time.time() > deadline:
-            raise RuntimeError("Mock A2A server did not start in time")
-        time.sleep(0.05)
-    yield f"http://127.0.0.1:{port}"
-    server.should_exit = True
-    thread.join(timeout=5)
 
 
 def _query(utt: str, qid: str, peer: str) -> HiveMessage:
@@ -93,8 +59,8 @@ def _answer_texts(records) -> list:
     return texts
 
 
-def test_a2a_agent_answers_query(a2a_server_url):
-    agent = A2AAgentProtocol(config={"agent_url": a2a_server_url})
+def test_a2a_agent_answers_query(a2a_agent_url):
+    agent = A2AAgentProtocol(config={"agent_url": a2a_agent_url})
 
     b = TopologyBuilder()
     m = b.add_master("M0", agent_protocol=agent)
@@ -113,8 +79,8 @@ def test_a2a_agent_answers_query(a2a_server_url):
 
         chunks = s.recorder.received(HiveMessageType.QUERY.value, direction="in")
         texts = _answer_texts(chunks)
-        assert any("Echo: hello hive" in t for t in texts), \
-            f"expected the mock A2A echo answer, got {texts!r}"
+        assert len(texts) == 1 and texts[0].endswith("]: hello hive"), \
+            f"expected the agent's echo of the utterance, got {texts!r}"
     finally:
         b.stop_all()
 

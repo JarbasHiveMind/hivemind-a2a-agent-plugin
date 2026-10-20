@@ -14,7 +14,7 @@ import httpx
 import pytest
 import uvicorn
 
-from tests.e2e.mock_a2a_server import app as mock_app
+from .mock_a2a_server import app as mock_app
 from hivemind_a2a_agent_plugin._client import A2AClient, AgentCard
 from hivemind_a2a_agent_plugin import A2AAgentProtocol
 

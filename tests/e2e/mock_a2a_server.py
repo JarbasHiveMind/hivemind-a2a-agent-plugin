@@ -1,7 +1,7 @@
 """Minimal FastAPI A2A server used by e2e tests and the README example.
 
-Start manually:
-    uvicorn tests.e2e.mock_a2a_server:app --port 9999
+Start manually, from the tests directory:
+    uvicorn e2e.mock_a2a_server:app --port 9999
 
 The server handles:
 - GET  /.well-known/agent.json  — agent card

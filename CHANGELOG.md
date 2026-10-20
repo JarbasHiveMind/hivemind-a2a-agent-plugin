@@ -1,8 +1,20 @@
 # Changelog
 
+## [0.1.4a3](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.4a3) (2026-10-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.4a2...0.1.4a3)
+
+**Merged pull requests:**
+
+- docs: user stories for the A2A agent protocol, and the real config [\#14](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/14) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.1.4a2](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.4a2) (2026-10-20)
 
-[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.3a1...0.1.4a2)
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.4a1...0.1.4a2)
+
+## [0.1.4a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.4a1) (2026-10-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.3a1...0.1.4a1)
 
 **Merged pull requests:**
 

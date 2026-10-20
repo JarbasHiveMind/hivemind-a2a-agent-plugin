@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.2a1) (2026-10-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.1a1...0.1.2a1)
+
+**Merged pull requests:**
+
+- fix\(tests\): import the e2e helper relatively, and drop tests/\_\_init\_\_.py [\#10](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/10) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.1.1a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.1a1) (2026-09-04)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.0a7...0.1.1a1)

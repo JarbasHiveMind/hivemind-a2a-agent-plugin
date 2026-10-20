@@ -1,9 +1,10 @@
 """HiveMind A2A agent protocol plugin.
 
 Bridges HiveMind natural-language queries to external A2A (Agent-to-Agent)
-agents.  Any utterance arriving from hive satellites is sent to a configured
-A2A agent with ``SendMessage`` (or ``SendStreamingMessage``), and the answer
-is streamed back through the HiveMind session.
+agents.  Each ``QUERY`` (natural-language query) arriving from hive
+satellites is sent to a configured A2A agent with ``SendMessage`` (or
+``SendStreamingMessage``), and the answer is streamed back through the
+HiveMind session.  A ``BUS`` ``recognizer_loop:utterance`` gets no answer.
 
 The plugin is registered under the ``hivemind.agent.protocol`` entry-point
 group so hivemind-core discovers it automatically.
@@ -67,8 +68,12 @@ class A2AAgentProtocol(AgentProtocol):
     _agent_card_fetched: bool = dataclasses.field(
         default=False, init=False, repr=False, compare=False
     )
+    _bus_utterance_warned: bool = dataclasses.field(
+        default=False, init=False, repr=False, compare=False
+    )
 
     def __post_init__(self) -> None:
+        self.bus.on("recognizer_loop:utterance", self._on_bus_utterance)
         # Merge OVOS global config if available, but explicit kwargs win.
         try:
             from ovos_config import Configuration
@@ -97,6 +102,16 @@ class A2AAgentProtocol(AgentProtocol):
                 streaming=streaming,
             )
             LOG.info(f"A2AAgentProtocol: configured for A2A agent at {url}")
+
+    def _on_bus_utterance(self, message: Any) -> None:
+        if self._bus_utterance_warned:
+            return
+        self._bus_utterance_warned = True
+        LOG.warning(
+            "A2AAgentProtocol: a BUS recognizer_loop:utterance reached the "
+            "agent bus. The A2A agent answers only QUERY messages, so this "
+            "utterance gets no reply."
+        )
 
     # ------------------------------------------------------------------
     # AgentProtocol implementation

@@ -3,7 +3,9 @@
 An agent-protocol plugin for [hivemind-core](https://github.com/JarbasHiveMind/HiveMind-core). It answers the questions a hive sends to its master with an external agent that speaks the [Agent2Agent (A2A) protocol](https://a2a-protocol.org).
 
 - [What you can do](#what-you-can-do)
-- [User stories](#user-stories)
+- [Answer questions with an A2A agent](#answer-questions-with-an-a2a-agent)
+- [Answer an agent that asks a question back](#answer-an-agent-that-asks-a-question-back)
+- [Handle a remote agent that is down, slow or fails](#handle-a-remote-agent-that-is-down-slow-or-fails)
 - [Reference](#reference)
 - [Deployment](#deployment)
 - [Troubleshooting](#troubleshooting)
@@ -16,16 +18,14 @@ With this plugin as its agent protocol, hivemind-core answers each `QUERY` from 
 
 The plugin answers `QUERY` and `CASCADE` messages, through the `natural_language_query` seam of the HiveMind agent protocol. A plain `BUS` `recognizer_loop:utterance` gets no answer. That is the message that `hivemind-client terminal` and a voice satellite send. See [Troubleshooting](#troubleshooting).
 
-## User stories
+## Answer questions with an A2A agent
 
-### My hive answers questions with an A2A agent
-
-You run hivemind-core and have an A2A agent: a LangGraph or CrewAI service, a hosted assistant, or an OVOS box running [ovos-persona-server](https://github.com/OpenVoiceOS/ovos-persona-server) with `--a2a-base-url`. You want the hive to answer with that agent.
+Use this setup when you run hivemind-core and have an A2A agent: a LangGraph or CrewAI service, a hosted assistant, or an OVOS box running [ovos-persona-server](https://github.com/OpenVoiceOS/ovos-persona-server) with `--a2a-base-url`. The hive then answers with that agent.
 
 1. Install the plugin next to hivemind-core:
 
    ```bash
-   uv pip install hivemind-a2a-agent-plugin
+   pip install --pre hivemind-a2a-agent-plugin
    ```
 
 2. Select it in `~/.config/hivemind-core/server.json`. `agent_protocol.module` names the plugin, and the key with the plugin name holds its settings:
@@ -105,7 +105,7 @@ echo[8a086dca-691d-499b-8def-a67bc59f3ddd]: what is the capital of portugal
 
 `NodeIdentity(app_name="a2a-query-example", shared_fallback=False)` gives the script its own identity under `~/.config/hivemind/a2a-query-example/`. Without it, the client uses the shared `~/.config/hivemind/_identity.json`. That fails when the shared identity already pinned another hub at the same address, and it changes key files that other HiveMind clients of the same user read.
 
-### The agent asks a question back
+## Answer an agent that asks a question back
 
 An agent can stop a task in `TASK_STATE_INPUT_REQUIRED` or `TASK_STATE_AUTH_REQUIRED` and ask for more. The satellite hears the question. With a test agent that asks for a city, the hive answered:
 
@@ -115,7 +115,7 @@ which city?
 
 The next `QUERY` starts a new A2A conversation, because hivemind-core passes no session id. The agent receives the answer without the question that came before it.
 
-### The remote agent is down, slow or fails
+## Handle a remote agent that is down, slow or fails
 
 The plugin never leaves a query without an answer. When the agent cannot answer, the satellite receives an error sentence, and then the end of the query.
 
@@ -161,9 +161,8 @@ The plugin runs inside hivemind-core and opens outbound HTTP connections only. A
 
 | Symptom | Cause and fix |
 |---|---|
-| A voice satellite or `hivemind-client terminal` gets no answer | They send `BUS` messages. The hub logs `Forwarding message 'recognizer_loop:utterance' to agent bus`, and this plugin does not answer the bus. Send a `QUERY`, as in the user story. |
+| A voice satellite or `hivemind-client terminal` gets no answer | They send `BUS` messages. The hub logs `Forwarding message 'recognizer_loop:utterance' to agent bus`, and this plugin does not answer the bus. Send a `QUERY`, as in [Answer questions with an A2A agent](#answer-questions-with-an-a2a-agent). |
 | `Error validating A2A agent ... (HTTP 404)` | `agent_url` points at the wrong path, or the agent publishes only `/.well-known/agent.json`, the A2A 0.2 path. The plugin speaks A2A 0.3 and 1.0 only. |
-| `ImportError: cannot import name 'BitStream' from 'bitstring'` | hivemind-bus-client 1.2.11a1 and older import `BitStream`, which bitstring 5 removed. With those versions, install `bitstring<5`. |
 | `AttributeError: module 'httpx' has no attribute 'AsyncClient'` | A prerelease of httpx 1.0 is installed. Install `httpx<1`. |
 
 ## Development

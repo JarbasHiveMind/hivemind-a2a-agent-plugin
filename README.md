@@ -16,7 +16,7 @@ A2A is an open protocol that lets one agent call another, whatever framework eac
 
 With this plugin as its agent protocol, hivemind-core answers each `QUERY` from a satellite or a child node. It sends the question to one A2A agent and returns the answer as `speak` chunks. The plugin uses the [a2a-sdk](https://pypi.org/project/a2a-sdk/) client. It reads the card, picks the transport the card offers, and speaks A2A 1.0 or 0.3, whichever the agent supports.
 
-The plugin answers `QUERY` and `CASCADE` messages, through the `natural_language_query` seam of the HiveMind agent protocol. A plain `BUS` `recognizer_loop:utterance` gets no answer. That is the message that `hivemind-client terminal` and a voice satellite send. See [Troubleshooting](#troubleshooting).
+The plugin answers `QUERY` and `CASCADE` messages, through the `natural_language_query` seam of the HiveMind agent protocol. It also answers a plain `BUS` message that carries `recognizer_loop:utterance`, which `hivemind-client terminal` sends, or `ovos.utterance.handle`, which a voice satellite sends. The answer comes back to that satellite as `speak` messages, followed by `ovos.utterance.handled`. The utterances of one satellite session share one A2A conversation.
 
 ## Answer questions with an A2A agent
 
@@ -46,7 +46,8 @@ Use this setup when you run hivemind-core and have an A2A agent: a LangGraph or 
 
    ```bash
    hivemind-core add-client --name kitchen-sat --access-key kitchen-key \
-       --password 'Correct-Horse-Battery-77' --allow recognizer_loop:utterance
+       --password 'Correct-Horse-Battery-77' \
+       --allow recognizer_loop:utterance --allow ovos.utterance.handle
    hivemind-core listen
    ```
 
@@ -161,7 +162,6 @@ The plugin runs inside hivemind-core and opens outbound HTTP connections only. A
 
 | Symptom | Cause and fix |
 |---|---|
-| A voice satellite or `hivemind-client terminal` gets no answer | They send `BUS` messages. The hub logs `Forwarding message 'recognizer_loop:utterance' to agent bus`, and this plugin does not answer the bus. Send a `QUERY`, as in [Answer questions with an A2A agent](#answer-questions-with-an-a2a-agent). |
 | `Error validating A2A agent ... (HTTP 404)` | `agent_url` points at the wrong path, or the agent publishes only `/.well-known/agent.json`, the A2A 0.2 path. The plugin speaks A2A 0.3 and 1.0 only. |
 | `AttributeError: module 'httpx' has no attribute 'AsyncClient'` | A prerelease of httpx 1.0 is installed. Install `httpx<1`. |
 

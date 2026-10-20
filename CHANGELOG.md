@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.4a4](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.4a4) (2026-10-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.4a3...0.1.4a4)
+
+**Merged pull requests:**
+
+- docs: give each setup a task heading, and install the latest alpha [\#15](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/15) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.1.4a3](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.4a3) (2026-10-20)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.4a2...0.1.4a3)

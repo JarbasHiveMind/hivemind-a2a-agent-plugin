@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.4a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.4a1) (2026-10-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.3a1...0.1.4a1)
+
+**Merged pull requests:**
+
+- build: drop the ovos-utils and hivemind-plugin-manager caps [\#13](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/13) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+- fix: point the project URLs at JarbasHiveMind [\#12](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/12) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.1.3a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.3a1) (2026-10-20)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.2a1...0.1.3a1)

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.3a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.3a1) (2026-10-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.2a1...0.1.3a1)
+
+**Merged pull requests:**
+
+- fix: speak A2A 1.0 through the a2a-sdk client [\#11](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/11) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.1.2a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.2a1) (2026-10-20)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.1a1...0.1.2a1)

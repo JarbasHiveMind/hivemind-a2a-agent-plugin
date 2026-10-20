@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.6a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.6a1) (2026-10-20)
+
+[Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.5a1...0.1.6a1)
+
+**Merged pull requests:**
+
+- fix: answer BUS utterances from satellites [\#17](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/pull/17) ([openvoiceos-bot](https://github.com/openvoiceos-bot))
+
 ## [0.1.5a1](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/tree/0.1.5a1) (2026-10-20)
 
 [Full Changelog](https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/compare/0.1.4a4...0.1.5a1)

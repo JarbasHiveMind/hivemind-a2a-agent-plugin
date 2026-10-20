@@ -45,8 +45,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/TigreGotico/hivemind-a2a-agent-plugin"
-Issues = "https://github.com/TigreGotico/hivemind-a2a-agent-plugin/issues"
+Homepage = "https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin"
+Issues = "https://github.com/JarbasHiveMind/hivemind-a2a-agent-plugin/issues"
 
 [project.entry-points."hivemind.agent.protocol"]
 "hivemind-a2a-agent-plugin" = "hivemind_a2a_agent_plugin:A2AAgentProtocol"
